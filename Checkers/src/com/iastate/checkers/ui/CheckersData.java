@@ -142,16 +142,23 @@ public class CheckersData {
 		// 3. if the piece moves into the kings row on the opponent's side of the board, crowned it as a king
 
 		if(pieceAt(fromRow,fromCol) == RED || pieceAt(fromRow,fromCol) == RED_KING) {
-			board[toRow][toCol] = RED;
+			if(pieceAt(fromRow,fromCol) == RED_KING) {
+				board[toRow][toCol] = RED_KING;
+			}
+			else {
+				board[toRow][toCol] = RED;
+			}
 			board[fromRow][fromCol] = EMPTY;
 
 			if(fromRow - toRow == 2 || fromRow - toRow == -2) {
-				board[fromRow + (fromRow-toRow)/2][fromCol + (fromCol-toCol)/2] = EMPTY;
-				if(pieceAt(fromRow + (fromRow-toRow)/2, fromCol + (fromCol-toCol)/2 )== BLACK) {
+				int [] capturedPiece = getCapturedPiece(fromRow, fromCol, toRow, toCol);
+				board[capturedPiece[0]][capturedPiece[1]] = EMPTY;
+
+				if(pieceAt(capturedPiece[0], capturedPiece[1] )== BLACK) {
 					int blkCap = (int)capturedPieces.get("BLACK");
 					capturedPieces.put("BLACK", blkCap++);
 				}
-				if(pieceAt(fromRow + (fromRow-toRow)/2, fromCol + (fromCol-toCol)/2 )== BLACK_KING) {
+				if(pieceAt(capturedPiece[0], capturedPiece[1] )== BLACK_KING) {
 					int blkCap = (int)capturedPieces.get("BLACK_KING");
 					capturedPieces.put("BLACK_KING", blkCap++);
 				}
@@ -164,18 +171,28 @@ public class CheckersData {
 
 		}
 		else if(pieceAt(fromRow,fromCol) == BLACK || pieceAt(fromRow,fromCol) == BLACK_KING) {
-			board[toRow][toCol] = BLACK;
+
+			if(pieceAt(fromRow,fromCol) == BLACK_KING) {
+				board[toRow][toCol] = BLACK_KING;
+			}
+			else {
+				board[toRow][toCol] = BLACK;
+			}
 			board[fromRow][fromCol] = EMPTY;
 
 			if(fromRow - toRow == 2 || fromRow - toRow == -2) {
-				board[fromRow + (fromRow-toRow)/2][fromCol + (fromCol-toCol)/2] = EMPTY;
-				if(pieceAt(fromRow + (fromRow-toRow)/2, fromCol + (fromCol-toCol)/2 )== RED) {
+
+				int [] capturedPiece = getCapturedPiece(fromRow, fromCol, toRow, toCol);
+				board[capturedPiece[0]][capturedPiece[1]] = EMPTY;
+				if(pieceAt(capturedPiece[0], capturedPiece[1] )== RED) {
 					int blkCap = (int)capturedPieces.get("RED");
 					capturedPieces.put("RED", blkCap++);
+
 				}
-				if(pieceAt(fromRow + (fromRow-toRow)/2, fromCol + (fromCol-toCol)/2 )== RED_KING) {
+				if(pieceAt(capturedPiece[0], capturedPiece[1] )== RED_KING) {
 					int blkCap = (int)capturedPieces.get("RED_KING");
 					capturedPieces.put("RED_KING", blkCap++);
+
 				}
 
 			}
@@ -205,6 +222,9 @@ public class CheckersData {
 		// Todo: Implement your getLegalMoves here. 
 
 		ArrayList<CheckersMove> checkersMovesList = new ArrayList<CheckersMove>();
+		ArrayList<CheckersMove> checkersJumpsList = new ArrayList<CheckersMove>();
+
+		boolean jumpsPresent = false;
 
 		if(player == BLACK) {
 
@@ -212,14 +232,18 @@ public class CheckersData {
 				for(int j=0; j<8; j++) {
 					if(pieceAt(i,j) == BLACK) {
 
-						CheckersMove[] jumps = getLegalJumpsFrom(BLACK,i,j);
+						CheckersMove[] jumpsPossible = getLegalJumpsFrom(BLACK, i, j);
 
-						if(jumps != null) {
-							for(CheckersMove cm : jumps) {
-								checkersMovesList.add(cm);
+						if(jumpsPossible != null && jumpsPossible.length > 0) {
+							jumpsPresent = true;
+
+							for(CheckersMove jm : jumpsPossible) {
+								checkersJumpsList.add(jm);
 							}
+
 						}
-						else {
+
+						if(!jumpsPresent){
 							if(i<7 && j < 7 && pieceAt(i+1,j+1) == EMPTY) {
 								checkersMovesList.add(new CheckersMove(i,j,i+1,j+1));
 							}
@@ -230,14 +254,18 @@ public class CheckersData {
 					}
 					else if(pieceAt(i,j) == BLACK_KING) {
 
-						CheckersMove[] jumps = getLegalJumpsFrom(BLACK_KING,i,j);
+						CheckersMove[] jumpsPossible = getLegalJumpsFrom(BLACK_KING, i, j);
 
-						if(jumps != null) {
-							for(CheckersMove cm : jumps) {
-								checkersMovesList.add(cm);
+						if(jumpsPossible != null && jumpsPossible.length > 0) {
+							jumpsPresent = true;
+
+							for(CheckersMove jm : jumpsPossible) {
+								checkersJumpsList.add(jm);
 							}
+
 						}
-						else {
+
+						if(!jumpsPresent){
 							if(i<7 && j < 7 && pieceAt(i+1,j+1) == EMPTY) {
 								checkersMovesList.add(new CheckersMove(i,j,i+1,j+1));
 							}
@@ -245,10 +273,10 @@ public class CheckersData {
 								checkersMovesList.add(new CheckersMove(i,j,i+1,j-1));
 							}
 							if(i>0 && j < 7 && pieceAt(i-1,j+1) == EMPTY) {
-								checkersMovesList.add(new CheckersMove(i,j,i+1,j+1));
+								checkersMovesList.add(new CheckersMove(i,j,i-1,j+1));
 							}
 							if(i>0 && j>0 && pieceAt(i-1,j-1) == EMPTY) {
-								checkersMovesList.add(new CheckersMove(i,j,i+1,j-1));
+								checkersMovesList.add(new CheckersMove(i,j,i-1,j-1));
 							}
 						}
 
@@ -262,14 +290,19 @@ public class CheckersData {
 			for(int i=0 ; i<8; i++) {
 				for(int j=0; j<8; j++) {
 					if(pieceAt(i,j) == RED) {
-						CheckersMove[] jumps = getLegalJumpsFrom(RED,i,j);
 
-						if(jumps != null) {
-							for(CheckersMove cm : jumps) {
-								checkersMovesList.add(cm);
+						CheckersMove[] jumpsPossible = getLegalJumpsFrom(RED, i, j);
+
+						if(jumpsPossible != null && jumpsPossible.length > 0) {
+							jumpsPresent = true;
+
+							for(CheckersMove jm : jumpsPossible) {
+								checkersJumpsList.add(jm);
 							}
+
 						}
-						else {
+
+						if(!jumpsPresent){
 							if(i>0 && j>0 && pieceAt(i-1,j-1) == EMPTY) {
 								checkersMovesList.add(new CheckersMove(i,j,i-1,j-1));
 							}
@@ -280,14 +313,18 @@ public class CheckersData {
 					}
 					else if(pieceAt(i,j) == RED_KING) {
 
-						CheckersMove[] jumps = getLegalJumpsFrom(RED_KING,i,j);
+						CheckersMove[] jumpsPossible = getLegalJumpsFrom(RED_KING, i, j);
 
-						if(jumps != null) {
-							for(CheckersMove cm : jumps) {
-								checkersMovesList.add(cm);
+						if(jumpsPossible != null && jumpsPossible.length > 0) {
+							jumpsPresent = true;
+
+							for(CheckersMove jm : jumpsPossible) {
+								checkersJumpsList.add(jm);
 							}
+
 						}
-						else {
+
+						if(!jumpsPresent){
 							if(i>0 && j>0 && pieceAt(i-1,j-1) == EMPTY) {
 								checkersMovesList.add(new CheckersMove(i,j,i-1,j-1));
 							}
@@ -295,10 +332,10 @@ public class CheckersData {
 								checkersMovesList.add(new CheckersMove(i,j,i-1,j+1));
 							}
 							if(i<7 && j>0 && pieceAt(i+1,j-1) == EMPTY) {
-								checkersMovesList.add(new CheckersMove(i,j,i-1,j-1));
+								checkersMovesList.add(new CheckersMove(i,j,i+1,j-1));
 							}
 							if(i<7 && j<7 && pieceAt(i+1,j+1) == EMPTY) {
-								checkersMovesList.add(new CheckersMove(i,j,i-1,j+1));
+								checkersMovesList.add(new CheckersMove(i,j,i+1,j+1));
 							}
 						}
 					}
@@ -307,11 +344,22 @@ public class CheckersData {
 			}
 		}
 
-		CheckersMove[] legalCheckersMoves = new CheckersMove[checkersMovesList.size()];
-		legalCheckersMoves = checkersMovesList.toArray(legalCheckersMoves);
 
-		if(legalCheckersMoves.length > 0) {
-			return legalCheckersMoves;
+		if(jumpsPresent) {
+			CheckersMove[] legalCheckersJumps = new CheckersMove[checkersJumpsList.size()];
+			legalCheckersJumps = checkersJumpsList.toArray(legalCheckersJumps);
+
+			if(legalCheckersJumps.length > 0) {
+				return legalCheckersJumps;
+			}
+		}
+		else {
+			CheckersMove[] legalCheckersMoves = new CheckersMove[checkersMovesList.size()];
+			legalCheckersMoves = checkersMovesList.toArray(legalCheckersMoves);
+
+			if(legalCheckersMoves.length > 0) {
+				return legalCheckersMoves;
+			}
 		}
 		return null;
 	}
@@ -445,6 +493,26 @@ public class CheckersData {
 
 		}
 		return null;
+	}
+
+
+
+	public int[] getCapturedPiece(int fromRow, int fromCol, int toRow, int toCol) {
+
+		if(toRow == fromRow+2 && toCol == fromCol+2) {
+			return new int[] {fromRow+1,fromCol+1};
+		}
+		else if(toRow == fromRow+2 && toCol == fromCol-2) {
+			return new int[] {fromRow+1,fromCol-1};
+		}
+		else if(toRow == fromRow-2 && toCol == fromCol+2) {
+			return new int[] {fromRow-1,fromCol+1};
+		}
+		else if(toRow == fromRow-2 && toCol == fromCol-2) {
+			return new int[] {fromRow-1,fromCol-1};
+		}
+
+		return new int[] {fromRow+1,fromCol+1};
 	}
 
 }
