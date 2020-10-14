@@ -23,11 +23,6 @@ public class AlphaBetaSearch {
     }
 
     // Todo: You can implement your helper methods here
-
-//    public CheckersMove[] getLegalMoves(int player, int[][] gameboard) {
-//    	
-//    	
-//    }
     
     
     int pieceAt(int row, int col, int[][] gameboard) {
@@ -37,6 +32,135 @@ public class AlphaBetaSearch {
     boolean isJumpMove(CheckersMove m) {
     	return (m.fromRow - m.toRow == 2 || m.fromRow - m.toRow == -2);
     }
+    
+    
+    public UtilityPair maxValue(int[][] gameboard, int alpha, int beta, int currentRecursionNum, int recursionNum) {
+    	
+    	if(currentRecursionNum == recursionNum) {
+    		return getUtility(gameboard, BLACK);
+    	}
+    	
+    	int v = NEG_INFINITY;
+    	
+    	UtilityPair pairToReturn = new UtilityPair(v,null);
+    	
+    	ArrayList<ArrayList<CheckersMove>> actions = getMovesFromGameBoard(BLACK, gameboard);
+    	//System.out.println(actions);
+    	
+    	if(actions == null) {
+    		return getUtility(gameboard, BLACK);
+    	}
+    	
+    	for(ArrayList<CheckersMove> a : actions) {
+    		
+    		int[][] newgameboard = generateBoardAfterMove(a, gameboard);
+    		UtilityPair minvals = minValue(newgameboard, alpha, beta, currentRecursionNum+1, recursionNum);
+    		
+    		if(minvals.getUtility() > v) {
+    			v = minvals.getUtility();
+    			pairToReturn.setUtility(v);
+    			pairToReturn.setMove(a);
+    			
+    			if(v > alpha) {
+    				alpha = v;
+    			}
+    			
+    			if(v >= beta) {
+    				return pairToReturn;
+    			}
+    		}
+    	}
+    	
+    	return pairToReturn;
+    	
+    }
+    
+    
+    public UtilityPair minValue(int[][] gameboard, int alpha, int beta, int currentRecursionNum, int recursionNum) {
+    	
+    	if(currentRecursionNum == recursionNum) {
+    		return getUtility(gameboard, RED);
+    	}
+    	
+    	int v = INFINITY;
+
+    	UtilityPair pairToReturn = new UtilityPair(v,null);
+    	
+    	ArrayList<ArrayList<CheckersMove>> actions = getMovesFromGameBoard(RED, gameboard);
+    	//System.out.println(actions);
+    	
+    	if(actions == null) {
+    		return getUtility(gameboard, RED);
+    	}
+    	
+    	for(ArrayList<CheckersMove> a : actions) {
+    		
+    		int[][] newgameboard = generateBoardAfterMove(a, gameboard);
+    		
+    		UtilityPair maxvals = maxValue(newgameboard, alpha, beta, currentRecursionNum+1, recursionNum);
+    		
+    		if(maxvals.getUtility() < v) {
+    			v = maxvals.getUtility();
+    			pairToReturn.setUtility(v);
+    			pairToReturn.setMove(a);
+    			
+    			if(v < beta) {
+    				beta = v;
+    			}
+    			
+    			if(v <= alpha) {
+    				return pairToReturn;
+    			}
+    		}
+    		
+    	}
+    	
+    	return pairToReturn;
+    }
+    
+    
+    public UtilityPair getUtility(int [][] gameboard, int player) {
+    	
+    	int heuristic_val = 0;
+    	
+    	for(int i=0; i<8; i++) {
+    		for(int j=0; j<8; j++) {
+    			if(pieceAt(i,j,gameboard) == RED_KING) {
+    				heuristic_val -= 8;
+    			}
+    			else if(pieceAt(i,j,gameboard) == BLACK_KING) {
+    				heuristic_val += 8;
+    			}
+    			else if(pieceAt(i,j,gameboard) == RED) {
+    				if(i==1 || i==2) {
+    					heuristic_val -= 4;
+    				}
+    				else if(i==3 || i==4) {
+    					heuristic_val -= 3;
+    				}
+    				else if(i==5 || i==6 || i==7) {
+    					heuristic_val -= 1;
+    				}
+    				
+    			}
+    			else if(pieceAt(i,j,gameboard) == BLACK) {
+    				if(i==1 || i==2) {
+    					heuristic_val += 4;
+    				}
+    				else if(i==3 || i==4) {
+    					heuristic_val += 3;
+    				}
+    				else if(i==5 || i==6 || i==7) {
+    					heuristic_val += 1;
+    				}
+    			}
+    		}
+    	}
+    	
+    	return new UtilityPair(heuristic_val, null);
+    }
+    
+    
     
     public int[][] generateBoardAfterMove(ArrayList<CheckersMove> move, int[][] gameboard){
     	
@@ -265,8 +389,14 @@ public class AlphaBetaSearch {
 
 				ArrayList<ArrayList<CheckersMove>> recursiveJumpsList = null;
 				
+				int[][] gameboardAfterJump = copyGameBoard(gameboard);
+				
+				gameboardAfterJump[row-1][col+1] = EMPTY;
+				gameboardAfterJump[row-2][col+2] = player;
+				gameboardAfterJump[row][col] = EMPTY;
+				
 				if(row > 1 && col < 6) {
-					recursiveJumpsList = getLegalJumpsFrom(player, row-2, col+2, gameboard);
+					recursiveJumpsList = getLegalJumpsFrom(player, row-2, col+2, gameboardAfterJump);
 				}
 				if(recursiveJumpsList != null) {
 				for(ArrayList<CheckersMove> acm : recursiveJumpsList) {
@@ -285,8 +415,14 @@ public class AlphaBetaSearch {
 
 				ArrayList<ArrayList<CheckersMove>> recursiveJumpsList = null;
 				
+				int[][] gameboardAfterJump = copyGameBoard(gameboard);
+				
+				gameboardAfterJump[row-1][col-1] = EMPTY;
+				gameboardAfterJump[row-2][col-2] = player;
+				gameboardAfterJump[row][col] = EMPTY;
+				
 				if(row > 1 && col > 1) {
-				recursiveJumpsList = getLegalJumpsFrom(player, row-2, col-2, gameboard);
+				recursiveJumpsList = getLegalJumpsFrom(player, row-2, col-2, gameboardAfterJump);
 				}
 				if(recursiveJumpsList != null) {
 				for(ArrayList<CheckersMove> acm : recursiveJumpsList) {
@@ -313,8 +449,14 @@ public class AlphaBetaSearch {
 
 				ArrayList<ArrayList<CheckersMove>> recursiveJumpsList = null;
 				
+				int[][] gameboardAfterJump = copyGameBoard(gameboard);
+				
+				gameboardAfterJump[row-1][col+1] = EMPTY;
+				gameboardAfterJump[row-2][col+2] = player;
+				gameboardAfterJump[row][col] = EMPTY;
+				
 				if(row > 1 && col < 6) {
-				recursiveJumpsList = getLegalJumpsFrom(player, row-2, col+2, gameboard);
+				recursiveJumpsList = getLegalJumpsFrom(player, row-2, col+2, gameboardAfterJump);
 				}
 				if(recursiveJumpsList != null) {
 				for(ArrayList<CheckersMove> acm : recursiveJumpsList) {
@@ -333,8 +475,14 @@ public class AlphaBetaSearch {
 
 				ArrayList<ArrayList<CheckersMove>> recursiveJumpsList = null;
 				
+				int[][] gameboardAfterJump = copyGameBoard(gameboard);
+				
+				gameboardAfterJump[row-1][col-1] = EMPTY;
+				gameboardAfterJump[row-2][col-2] = player;
+				gameboardAfterJump[row][col] = EMPTY;
+				
 				if(row > 1 && col > 1) {
-				recursiveJumpsList = getLegalJumpsFrom(player, row-2, col-2, gameboard);
+				recursiveJumpsList = getLegalJumpsFrom(player, row-2, col-2, gameboardAfterJump);
 				}
 				if(recursiveJumpsList != null) {
 				for(ArrayList<CheckersMove> acm : recursiveJumpsList) {
@@ -354,8 +502,14 @@ public class AlphaBetaSearch {
 
 				ArrayList<ArrayList<CheckersMove>> recursiveJumpsList = null;
 				
+				int[][] gameboardAfterJump = copyGameBoard(gameboard);
+				
+				gameboardAfterJump[row+1][col+1] = EMPTY;
+				gameboardAfterJump[row+2][col+2] = player;
+				gameboardAfterJump[row][col] = EMPTY;
+				
 				if(row < 6 && col < 6) {
-				recursiveJumpsList = getLegalJumpsFrom(player, row+2, col+2, gameboard);
+				recursiveJumpsList = getLegalJumpsFrom(player, row+2, col+2, gameboardAfterJump);
 				}
 				if(recursiveJumpsList != null) {
 				for(ArrayList<CheckersMove> acm : recursiveJumpsList) {
@@ -375,8 +529,14 @@ public class AlphaBetaSearch {
 
 				ArrayList<ArrayList<CheckersMove>> recursiveJumpsList = null;
 				
+				int[][] gameboardAfterJump = copyGameBoard(gameboard);
+				
+				gameboardAfterJump[row+1][col-1] = EMPTY;
+				gameboardAfterJump[row+2][col-2] = player;
+				gameboardAfterJump[row][col] = EMPTY;
+				
 				if(row < 6 && col > 1) {
-				recursiveJumpsList = getLegalJumpsFrom(player, row+2, col-2, gameboard);
+				recursiveJumpsList = getLegalJumpsFrom(player, row+2, col-2, gameboardAfterJump);
 				}
 				if(recursiveJumpsList != null) {
 				for(ArrayList<CheckersMove> acm : recursiveJumpsList) {
@@ -404,8 +564,14 @@ public class AlphaBetaSearch {
 
 				ArrayList<ArrayList<CheckersMove>> recursiveJumpsList = null;
 				
+				int[][] gameboardAfterJump = copyGameBoard(gameboard);
+				
+				gameboardAfterJump[row+1][col+1] = EMPTY;
+				gameboardAfterJump[row+2][col+2] = player;
+				gameboardAfterJump[row][col] = EMPTY;
+				
 				if(row < 6 && col < 6 ) {
-				recursiveJumpsList = getLegalJumpsFrom(player, row+2, col+2, gameboard);
+				recursiveJumpsList = getLegalJumpsFrom(player, row+2, col+2, gameboardAfterJump);
 				}
 				if(recursiveJumpsList != null) {
 				for(ArrayList<CheckersMove> acm : recursiveJumpsList) {
@@ -425,8 +591,14 @@ public class AlphaBetaSearch {
 
 				ArrayList<ArrayList<CheckersMove>> recursiveJumpsList = null;
 				
+				int[][] gameboardAfterJump = copyGameBoard(gameboard);
+				
+				gameboardAfterJump[row+1][col-1] = EMPTY;
+				gameboardAfterJump[row+2][col-2] = player;
+				gameboardAfterJump[row][col] = EMPTY;
+				
 				if(row < 6 && col > 1 ) {
-				recursiveJumpsList = getLegalJumpsFrom(player, row+2, col-2, gameboard);
+				recursiveJumpsList = getLegalJumpsFrom(player, row+2, col-2, gameboardAfterJump);
 				}
 				if(recursiveJumpsList != null) {
 				for(ArrayList<CheckersMove> acm : recursiveJumpsList) {
@@ -456,8 +628,14 @@ public class AlphaBetaSearch {
 
 				ArrayList<ArrayList<CheckersMove>> recursiveJumpsList = null;
 				
+				int[][] gameboardAfterJump = copyGameBoard(gameboard);
+				
+				gameboardAfterJump[row+1][col+1] = EMPTY;
+				gameboardAfterJump[row+2][col+2] = player;
+				gameboardAfterJump[row][col] = EMPTY;
+				
 				if(row < 6 && col < 6 ) {
-				recursiveJumpsList = getLegalJumpsFrom(player, row+2, col+2, gameboard);
+				recursiveJumpsList = getLegalJumpsFrom(player, row+2, col+2, gameboardAfterJump);
 				}
 				if(recursiveJumpsList != null) {
 				for(ArrayList<CheckersMove> acm : recursiveJumpsList) {
@@ -476,8 +654,14 @@ public class AlphaBetaSearch {
 
 				ArrayList<ArrayList<CheckersMove>> recursiveJumpsList = null;
 				
+				int[][] gameboardAfterJump = copyGameBoard(gameboard);
+				
+				gameboardAfterJump[row+1][col-1] = EMPTY;
+				gameboardAfterJump[row+2][col-2] = player;
+				gameboardAfterJump[row][col] = EMPTY;
+				
 				if(row < 6 && col > 1 ) {
-				recursiveJumpsList = getLegalJumpsFrom(player, row+2, col-2, gameboard);
+				recursiveJumpsList = getLegalJumpsFrom(player, row+2, col-2, gameboardAfterJump);
 				}
 				if(recursiveJumpsList != null) {
 				for(ArrayList<CheckersMove> acm : recursiveJumpsList) {
@@ -496,8 +680,14 @@ public class AlphaBetaSearch {
 
 				ArrayList<ArrayList<CheckersMove>> recursiveJumpsList = null;
 				
+				int[][] gameboardAfterJump = copyGameBoard(gameboard);
+				
+				gameboardAfterJump[row-1][col+1] = EMPTY;
+				gameboardAfterJump[row-2][col+2] = player;
+				gameboardAfterJump[row][col] = EMPTY;
+				
 				if(row > 1 && col < 6 ) {
-				recursiveJumpsList = getLegalJumpsFrom(player, row-2, col+2, gameboard);
+				recursiveJumpsList = getLegalJumpsFrom(player, row-2, col+2, gameboardAfterJump);
 				}
 				if(recursiveJumpsList != null) {
 				for(ArrayList<CheckersMove> acm : recursiveJumpsList) {
@@ -516,8 +706,14 @@ public class AlphaBetaSearch {
 
 				ArrayList<ArrayList<CheckersMove>> recursiveJumpsList = null;
 				
+				int[][] gameboardAfterJump = copyGameBoard(gameboard);
+				
+				gameboardAfterJump[row-1][col-1] = EMPTY;
+				gameboardAfterJump[row-2][col-2] = player;
+				gameboardAfterJump[row][col] = EMPTY;
+				
 				if(row > 1 && col > 1 ) {
-				recursiveJumpsList = getLegalJumpsFrom(player, row-2, col-2, gameboard);
+				recursiveJumpsList = getLegalJumpsFrom(player, row-2, col-2, gameboardAfterJump);
 				}
 				if(recursiveJumpsList != null) {
 				for(ArrayList<CheckersMove> acm : recursiveJumpsList) {
@@ -541,6 +737,21 @@ public class AlphaBetaSearch {
 
 		}
 		return null;
+	}
+	
+	
+	
+	public int[][] copyGameBoard(int[][] gameboard){
+		
+		int [][] newGameBoard = new int[8][8];
+		
+		for(int i=0; i<8; i++) {
+			for(int j=0; j<8; j++) {
+				newGameBoard[i][j] = gameboard[i][j];
+			}
+		}
+		
+		return newGameBoard;
 	}
 
     /**
@@ -566,21 +777,24 @@ public class AlphaBetaSearch {
         System.out.println(board);
         System.out.println();
         
-        ArrayList<ArrayList<CheckersMove>> listOfMoves = getMovesFromGameBoard(BLACK, board.board);
 
-        for(ArrayList<CheckersMove> moves : listOfMoves) {
-        	System.out.println(moves);
-        	int [][] genboard = generateBoardAfterMove(moves, board.board);
-        	
-        	for(int i=0;i<genboard.length; i++) {
-        		for(int j=0; j<genboard[0].length; j++) {
-        			System.out.print(genboard[i][j]+" ");
-        		}
-        		System.out.println();
+
+        int alpha = NEG_INFINITY;
+        int beta = INFINITY;
+        
+        UtilityPair output = maxValue(board.board, alpha, beta, 0, 8);
+        
+        System.out.println(output.getMove());
+        
+        ArrayList<CheckersMove> predictedMove = output.getMove();
+        
+        CheckersMove immediatePredictedMove = predictedMove.get(predictedMove.size()-1);
+        
+        for(CheckersMove cm: legalMoves) {
+        	if(cm.fromRow == immediatePredictedMove.fromRow && cm.fromCol == immediatePredictedMove.fromCol && cm.toRow == immediatePredictedMove.toRow && cm.toCol == immediatePredictedMove.toCol) {
+        		return cm;
         	}
         }
-        // Todo: return the move for the current state
-
         
         // Here, we simply return the first legal move for demonstration.
         return legalMoves[0];
@@ -588,9 +802,37 @@ public class AlphaBetaSearch {
     
     
     
-    
-//    public CheckersMove alphaBetaSearch(int [] boardconfig, int alpha, int beta) {
-//    	
-//    	
-//    }
+   
+}
+
+
+class UtilityPair{
+	
+	int utility;
+	ArrayList<CheckersMove> move;
+	
+	public UtilityPair(int utility, ArrayList<CheckersMove> move) {
+		super();
+		this.utility = utility;
+		this.move = move;
+	}
+
+	public int getUtility() {
+		return utility;
+	}
+
+	public void setUtility(int utility) {
+		this.utility = utility;
+	}
+
+	public ArrayList<CheckersMove> getMove() {
+		return move;
+	}
+
+	public void setMove(ArrayList<CheckersMove> move) {
+		this.move = move;
+	}
+	
+	
+	
 }

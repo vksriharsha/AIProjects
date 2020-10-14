@@ -85,6 +85,12 @@ public class CheckersData {
 	void setUpGame() {
 		// Todo: setup the board with pieces BLACK, RED, and EMPTY
 
+		for(int i=0; i<8; i++) {
+			for(int j=0; j<8; j++) {
+				board[i][j] = EMPTY;
+			}
+		}
+		
 		for(int i = 0; i < 3; i++ ) {
 			for(int j = 0; j < 8 ; j++) {
 				if(i%2 == j%2) {

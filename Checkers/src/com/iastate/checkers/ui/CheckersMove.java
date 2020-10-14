@@ -26,6 +26,7 @@ public class CheckersMove {
 		return "CheckersMove [fromRow=" + fromRow + ", fromCol=" + fromCol + ", toRow=" + toRow + ", toCol=" + toCol
 				+ "]";
 	}
+	
     
     
 }  // end class CheckersMove.
